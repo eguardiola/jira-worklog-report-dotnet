@@ -13,8 +13,24 @@ namespace JiraWorkLogReport
     {
         static void Main(string[] args)
         {
-            BuildJiraWorkLogReport().GetAwaiter().GetResult();
+            //BuildJiraWorkLogReport().GetAwaiter().GetResult();
+            MigrateWorklogs().GetAwaiter().GetResult();
         }
+
+        private static async Task MigrateWorklogs()
+        {
+            var jira = Jira.CreateRestClient("https://jira.example.com", "username", "******");
+
+            var issue = await jira.Issues.GetIssueAsync("NET-49");
+            var worklogs = await issue.GetWorklogsAsync();
+
+            foreach (var worklog in worklogs)
+            {
+                await jira.Issues.AddWorklogAsync("IT-2", worklog, WorklogStrategy.AutoAdjustRemainingEstimate);
+                await jira.Issues.DeleteWorklogAsync("NET-49", worklog.Id, WorklogStrategy.AutoAdjustRemainingEstimate);
+            }
+        }
+
 
         private static async Task BuildJiraWorkLogReport()
         {
